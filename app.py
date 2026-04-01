@@ -42,6 +42,9 @@ THEMES = {
         'legend_bg': 'rgba(0,0,0,0.3)',
         'alert_bg': 'rgba(231,76,60,0.08)',
         'gauge_bg': 'rgba(0,0,0,0.2)',
+        'gauge_danger': 'rgba(231,76,60,0.2)',
+        'gauge_warning': 'rgba(245,166,35,0.2)',
+        'gauge_success': 'rgba(0,166,81,0.2)',
         'empty_bg': 'rgba(0,145,218,0.1)',
         'empty_border': 'rgba(0,145,218,0.2)',
     },
@@ -65,6 +68,9 @@ THEMES = {
         'legend_bg': 'rgba(255,255,255,0.8)',
         'alert_bg': 'rgba(231,76,60,0.1)',
         'gauge_bg': 'rgba(0,0,0,0.05)',
+        'gauge_danger': 'rgba(192,57,43,0.2)',
+        'gauge_warning': 'rgba(223,122,0,0.2)',
+        'gauge_success': 'rgba(0,166,81,0.2)',
         'empty_bg': 'rgba(0,145,218,0.05)',
         'empty_border': 'rgba(0,145,218,0.15)',
     }
@@ -360,9 +366,7 @@ if master_file:
                 master_df = pd.read_excel(master_file, sheet_name=0)
         else:
             master_df = pd.read_csv(master_file)
-        
-        fleet_analysis = get_fleet_analysis(master_df)
-        missing_ids = get_missing_trucking(df, master_df)
+            
     except Exception as e:
         st.sidebar.error(f"Error loading master data: {str(e)}")
 
@@ -377,10 +381,26 @@ types = sorted(df['TYPE OF VEHICLE'].dropna().unique()) if 'TYPE OF VEHICLE' in 
 sel_types = st.sidebar.multiselect("Vehicle Type", options=types, key="type_filter")
 
 df_filtered = df.copy()
+master_filtered = None
+
+if master_df is not None:
+    # Process master once to standardise district and vehicle type columns before filtering
+    master_filtered = process_master_fleet(master_df)
+
 if sel_dists:
     df_filtered = df_filtered[df_filtered['DISTRICT'].isin(sel_dists)]
+    if master_filtered is not None:
+        master_filtered = master_filtered[master_filtered['DISTRICT'].isin(sel_dists)]
+
 if sel_types:
     df_filtered = df_filtered[df_filtered['TYPE OF VEHICLE'].isin(sel_types)]
+    if master_filtered is not None:
+        master_filtered = master_filtered[master_filtered['VEHICLE_TYPE'].isin(sel_types)]
+
+# Generate Fleet Analysis and Missing IDs *AFTER* filters are applied
+if master_filtered is not None:
+    fleet_analysis = get_fleet_analysis(master_filtered)
+    missing_ids = get_missing_trucking(df_filtered, master_filtered)
 
 # Quick Jump
 st.sidebar.markdown("---")
@@ -451,9 +471,9 @@ if mode != "Full Fleet Dashboard":
                 'bgcolor': COLORS['gauge_bg'],
                 'borderwidth': 0,
                 'steps': [
-                    {'range': [0, 50], 'color': f"{COLORS['danger']}33"},
-                    {'range': [50, 80], 'color': f"{COLORS['warning']}33"},
-                    {'range': [80, 100], 'color': f"{COLORS['success']}33"},
+                    {'range': [0, 50], 'color': COLORS['gauge_danger']},
+                    {'range': [50, 80], 'color': COLORS['gauge_warning']},
+                    {'range': [80, 100], 'color': COLORS['gauge_success']},
                 ],
                 'threshold': {
                     'line': {'color': COLORS['danger'], 'width': 2},
