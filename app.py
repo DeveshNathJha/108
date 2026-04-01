@@ -111,11 +111,24 @@ st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
     
+    :root {{
+        --text-color: {COLORS['text']};
+        --background-color: {COLORS['dark']};
+        --secondary-background-color: {COLORS['card_bg']};
+        --primary-color: {COLORS['accent']};
+    }}
+
     .stApp {{
         background: linear-gradient(135deg, {COLORS['dark']} 0%, {COLORS['dark_grad']} 50%, {COLORS['dark']} 100%);
         color: {COLORS['text']};
         font-family: 'Inter', sans-serif;
     }}
+
+    /* Force Streamlit native text elements to respect the theme text color */
+    label, p, h1, h2, h3, h4, h5, h6, li, .stMarkdown p, [data-testid="stSidebar"] label, [data-testid="stSidebar"] span, [data-baseweb="tab"] p, [data-baseweb="radio"] div {{
+        color: {COLORS['text']} !important;
+    }}
+
     
     /* Professional KPI Cards */
     .kpi-card {{
