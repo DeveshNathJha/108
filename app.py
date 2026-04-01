@@ -20,22 +20,59 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- PROFESSIONAL COLOR PALETTE (KPMG-Inspired) ---
-COLORS = {
-    'primary': '#00338D',      # KPMG Deep Blue
-    'secondary': '#005EB8',    # Medium Blue
-    'accent': '#0091DA',       # Bright Blue
-    'light_blue': '#00A3E0',   # Light Blue
-    'success': '#00A651',      # Green
-    'warning': '#F5A623',      # Amber
-    'danger': '#E74C3C',       # Red
-    'info': '#48C9B0',         # Teal
-    'dark': '#1A1A2E',         # Dark background
-    'card_bg': '#16213E',      # Card background
-    'card_border': '#0F3460',  # Card border
-    'text': '#E8E8E8',         # Text
-    'muted': '#8899AA',        # Muted text
+# --- PROFESSIONAL COLOR PALETTE & THEMING ---
+THEMES = {
+    "dark": {
+        'primary': '#00338D',      # KPMG Deep Blue
+        'secondary': '#005EB8',    # Medium Blue
+        'accent': '#0091DA',       # Bright Blue
+        'light_blue': '#00A3E0',   # Light Blue
+        'success': '#00A651',      # Green
+        'warning': '#F5A623',      # Amber
+        'danger': '#E74C3C',       # Red
+        'info': '#48C9B0',         # Teal
+        'dark': '#1A1A2E',         # Dark background ends
+        'dark_grad': '#0F0F23',    # Dark background center
+        'card_bg': '#16213E',      # Card background
+        'card_border': '#0F3460',  # Card border
+        'text': '#E8E8E8',         # Text
+        'muted': '#8899AA',        # Muted text
+        'grid': 'rgba(255,255,255,0.05)',
+        'shadow': 'rgba(0,0,0,0.3)',
+        'legend_bg': 'rgba(0,0,0,0.3)',
+        'alert_bg': 'rgba(231,76,60,0.08)',
+        'gauge_bg': 'rgba(0,0,0,0.2)',
+        'empty_bg': 'rgba(0,145,218,0.1)',
+        'empty_border': 'rgba(0,145,218,0.2)',
+    },
+    "light": {
+        'primary': '#00338D',      
+        'secondary': '#005EB8',    
+        'accent': '#0091DA',       
+        'light_blue': '#00A3E0',   
+        'success': '#00A651',      
+        'warning': '#DF7A00',      # Darker amber for visibility
+        'danger': '#C0392B',       # Darker red
+        'info': '#16A085',         
+        'dark': '#F4F7F6',         # Light background ends
+        'dark_grad': '#FFFFFF',    # Light background center
+        'card_bg': '#FFFFFF',      # Card background
+        'card_border': '#D1DCE5',  # Card border
+        'text': '#111827',         # Dark text
+        'muted': '#6B7A90',        # Muted text
+        'grid': 'rgba(0,0,0,0.05)',
+        'shadow': 'rgba(0,0,0,0.05)',
+        'legend_bg': 'rgba(255,255,255,0.8)',
+        'alert_bg': 'rgba(231,76,60,0.1)',
+        'gauge_bg': 'rgba(0,0,0,0.05)',
+        'empty_bg': 'rgba(0,145,218,0.05)',
+        'empty_border': 'rgba(0,145,218,0.15)',
+    }
 }
+
+# Sidebar matching for Theme (must be done before applying CSS)
+theme_choice = st.sidebar.radio("🎨 Dashboard Theme", ["Dark", "Light"], index=0, horizontal=True)
+COLORS = THEMES[theme_choice.lower()]
 
 RISK_COLORS = {
     'High Risk': COLORS['danger'],
@@ -56,7 +93,7 @@ CHART_TEMPLATE = dict(
     font=dict(family='Inter, sans-serif', color=COLORS['text'], size=12),
     title_font=dict(size=16, color=COLORS['text']),
     legend=dict(
-        bgcolor='rgba(0,0,0,0.3)',
+        bgcolor=COLORS['legend_bg'],
         bordercolor=COLORS['card_border'],
         borderwidth=1,
         font=dict(size=11)
@@ -75,7 +112,7 @@ st.markdown(f"""
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
     
     .stApp {{
-        background: linear-gradient(135deg, {COLORS['dark']} 0%, #0F0F23 50%, {COLORS['dark']} 100%);
+        background: linear-gradient(135deg, {COLORS['dark']} 0%, {COLORS['dark_grad']} 50%, {COLORS['dark']} 100%);
         color: {COLORS['text']};
         font-family: 'Inter', sans-serif;
     }}
@@ -88,7 +125,7 @@ st.markdown(f"""
         padding: 24px 20px;
         text-align: center;
         backdrop-filter: blur(10px);
-        box-shadow: 0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05);
+        box-shadow: 0 8px 32px {COLORS['shadow']}, inset 0 1px 0 {COLORS['grid']};
         transition: transform 0.2s ease, box-shadow 0.2s ease;
         margin-bottom: 16px;
     }}
@@ -140,9 +177,9 @@ st.markdown(f"""
         font-weight: 600;
         letter-spacing: 0.5px;
     }}
-    .badge-danger {{ background: rgba(231,76,60,0.2); color: #E74C3C; border: 1px solid rgba(231,76,60,0.3); }}
-    .badge-warning {{ background: rgba(245,166,35,0.2); color: #F5A623; border: 1px solid rgba(245,166,35,0.3); }}
-    .badge-success {{ background: rgba(0,166,81,0.2); color: #00A651; border: 1px solid rgba(0,166,81,0.3); }}
+    .badge-danger {{ background: {COLORS['danger']}20; color: {COLORS['danger']}; border: 1px solid {COLORS['danger']}40; }}
+    .badge-warning {{ background: {COLORS['warning']}20; color: {COLORS['warning']}; border: 1px solid {COLORS['warning']}40; }}
+    .badge-success {{ background: {COLORS['success']}20; color: {COLORS['success']}; border: 1px solid {COLORS['success']}40; }}
     
     /* Alert Box */
     .alert-professional {{
@@ -150,7 +187,7 @@ st.markdown(f"""
         border-radius: 12px;
         margin-bottom: 12px;
         border-left: 4px solid {COLORS['danger']};
-        background: rgba(231,76,60,0.08);
+        background: {COLORS['alert_bg']};
         color: {COLORS['text']};
         font-size: 0.9rem;
     }}
@@ -208,12 +245,12 @@ def apply_chart_style(fig, height=400):
         height=height,
     )
     fig.update_xaxes(
-        gridcolor='rgba(255,255,255,0.05)',
+        gridcolor=COLORS['grid'],
         linecolor=COLORS['card_border'],
         tickfont=dict(size=10),
     )
     fig.update_yaxes(
-        gridcolor='rgba(255,255,255,0.05)',
+        gridcolor=COLORS['grid'],
         linecolor=COLORS['card_border'],
         tickfont=dict(size=10),
     )
@@ -271,9 +308,9 @@ if df is None or df.empty:
         <div style='font-size:4rem; font-weight:bold;'>108</div>
         <div class='dashboard-title'>Jharkhand 108 Ambulance Monitoring</div>
         <div class='dashboard-subtitle'>Upload a Status CSV in the sidebar to begin fleet analysis</div>
-        <div style='margin-top:30px; padding:20px; background:rgba(0,145,218,0.1); border-radius:12px; border:1px solid rgba(0,145,218,0.2); display:inline-block;'>
-            <div style='color:#0091DA; font-weight:600;'>Required File Format</div>
-            <div style='color:#8899AA; font-size:0.85rem; margin-top:8px;'>CSV with columns: VEHICLE DEITALS, TYPE OF VEHICLE, DISTRICT, [Instrument Columns], EMT NAME / ID</div>
+        <div style='margin-top:30px; padding:20px; background:{COLORS["empty_bg"]}; border-radius:12px; border:1px solid {COLORS["empty_border"]}; display:inline-block;'>
+            <div style='color:{COLORS["accent"]}; font-weight:600;'>Required File Format</div>
+            <div style='color:{COLORS["muted"]}; font-size:0.85rem; margin-top:8px;'>CSV with columns: VEHICLE DEITALS, TYPE OF VEHICLE, DISTRICT, [Instrument Columns], EMT NAME / ID</div>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -380,12 +417,12 @@ if mode != "Full Fleet Dashboard":
             gauge={
                 'axis': {'range': [0, 100], 'tickcolor': COLORS['muted']},
                 'bar': {'color': COLORS['accent'], 'thickness': 0.3},
-                'bgcolor': 'rgba(0,0,0,0.2)',
+                'bgcolor': COLORS['gauge_bg'],
                 'borderwidth': 0,
                 'steps': [
-                    {'range': [0, 50], 'color': 'rgba(231,76,60,0.2)'},
-                    {'range': [50, 80], 'color': 'rgba(245,166,35,0.2)'},
-                    {'range': [80, 100], 'color': 'rgba(0,166,81,0.2)'},
+                    {'range': [0, 50], 'color': f"{COLORS['danger']}33"},
+                    {'range': [50, 80], 'color': f"{COLORS['warning']}33"},
+                    {'range': [80, 100], 'color': f"{COLORS['success']}33"},
                 ],
                 'threshold': {
                     'line': {'color': COLORS['danger'], 'width': 2},
