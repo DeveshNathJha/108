@@ -71,7 +71,7 @@ THEMES = {
 }
 
 # Sidebar matching for Theme (must be done before applying CSS)
-theme_choice = st.sidebar.radio("🎨 Dashboard Theme", ["Dark", "Light"], index=0, horizontal=True)
+theme_choice = st.sidebar.radio("Dashboard Theme", ["Dark", "Light"], index=0, horizontal=True)
 COLORS = THEMES[theme_choice.lower()]
 
 RISK_COLORS = {
@@ -124,8 +124,12 @@ st.markdown(f"""
         font-family: 'Inter', sans-serif;
     }}
 
+    [data-testid="stSidebar"] {{
+        background-color: {COLORS['card_bg']} !important;
+    }}
+
     /* Force Streamlit native text elements to respect the theme text color */
-    label, p, h1, h2, h3, h4, h5, h6, li, .stMarkdown p, [data-testid="stSidebar"] label, [data-testid="stSidebar"] span, [data-baseweb="tab"] p, [data-baseweb="radio"] div {{
+    label, p, h1, h2, h3, h4, h5, h6, li, span, .stMarkdown p, [data-testid="stSidebar"] label, [data-testid="stSidebar"] span, [data-baseweb="tab"] p, [data-baseweb="radio"] div {{
         color: {COLORS['text']} !important;
     }}
 
@@ -896,6 +900,25 @@ else:
                 yaxis_title="Total Instrument Count"
             )
             st.plotly_chart(fig_req, use_container_width=True)
+            
+            # --- STANDARD INSTRUMENT CONFIGURATION CHECKLIST ---
+            st.markdown("<div class='section-header'>Standard Minimum Requirements (100% Configuration)</div>", unsafe_allow_html=True)
+            st.markdown(f"<div style='color:{COLORS['muted']}; font-size:0.9rem; margin-bottom:15px;'>Because a 100% score for ALS is different from BLS, here is the standard expected inventory for each vehicle type:</div>", unsafe_allow_html=True)
+            
+            # Categorizing Instruments based on typical 108 Ambulance norms
+            bls_core = ['Auto Loader - Collapsible stretcher', 'Scoop Stretcher', 'Spine Board with Straps', 'D Type Oxygen Cylinder', 'B Type Oxygen Cylinder', 'Portable Oxygen Cylinder', 'Flowmeter', 'Humidifier Bottel', 'Aneroid B.P Appratus with Pediatric Cuff-Size', 'Pneumatic Splints', 'Guaze Cutter', 'Thermometer (Digital)', 'Wheel Chair', 'Needle cum Syringe Destroyer']
+            als_core = bls_core + ['Nebulizer Machine', 'Suction Machine (Electric)', 'Suction Machine (Hand Held)', 'Pulse Oximeter', 'Glucometer', 'Margils Forcep', 'Artificial Manual Breathing unit (Adult, Child+Neonatal)']
+            neo_core = bls_core + ['Stethoscope (Pediatric+Neonatal)', 'Cervical Collar- Paediatric', 'Double Head Immobilizer (Pediatric+Neonatal)', 'Artificial Manual Breathing unit (Adult, Child+Neonatal)', 'Nebulizer Machine', 'Suction Machine (Electric)', 'Suction Machine (Hand Held)', 'Pulse Oximeter']
+            
+            req_data = pd.DataFrame({
+                "Equipment / Instrument Name": inst_cols,
+                "BLS": ["✅" if i in bls_core else "❌" for i in inst_cols],
+                "ALS": ["✅" if i in als_core else "❌" for i in inst_cols],
+                "NEO NATAL": ["✅" if i in neo_core else "❌" for i in inst_cols],
+            })
+            
+            st.dataframe(req_data, use_container_width=True, hide_index=True)
+            download_csv_button(req_data, "Ambulance_Expected_Configuration.csv", "dl_config_matrix")
     
     # ============================
     #  TAB 4: EQUIPMENT FAILURES
