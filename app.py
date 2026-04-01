@@ -244,6 +244,18 @@ st.markdown(f"""
 
 
 # --- HELPER FUNCTIONS ---
+def download_csv_button(df, filename, key):
+    csv = df.to_csv(index=False).encode('utf-8')
+    st.download_button(
+        label="📥 Download Data (CSV)",
+        data=csv,
+        file_name=filename,
+        mime='text/csv',
+        key=key,
+        help="Download this table as a CSV file to copy or share.",
+        use_container_width=True
+    )
+
 def kpi_card(title, value, subtitle="", style=""):
     return f"""<div class='kpi-card'>
         <div class='kpi-title'>{title}</div>
@@ -410,8 +422,9 @@ if mode != "Full Fleet Dashboard":
                 'Status': val,
                 'Indicator': 'OK' if val == 'WORKING' else ('FAIL' if val == 'NOT WORKING' else 'N/A')
             })
+        status_df = pd.DataFrame(status_data)
         st.dataframe(
-            pd.DataFrame(status_data),
+            status_df,
             use_container_width=True,
             hide_index=True,
             column_config={
@@ -420,6 +433,7 @@ if mode != "Full Fleet Dashboard":
                 "Indicator": st.column_config.TextColumn("", width="small"),
             }
         )
+        download_csv_button(status_df, f"108_Equipment_Status_{mode}.csv", f"dl_amb_matrix_{mode}")
     
     with col_r:
         # Health Gauge
@@ -592,6 +606,7 @@ else:
                     ),
                 }
             )
+            download_csv_button(audit_df, "Audit_Vehicles.csv", "dl_audit")
         else:
             st.success("All vehicles are in Low Risk category!")
     
@@ -859,6 +874,28 @@ else:
                 legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1),
             )
             st.plotly_chart(fig_type_dist, use_container_width=True)
+            
+            # Expected Instruments per Vehicle Type Chart
+            st.markdown("<div class='section-header'>Required Instruments per Vehicle Type</div>", unsafe_allow_html=True)
+            req_inst = df_filtered.groupby('TYPE OF VEHICLE')['Total Applicable'].max().reset_index()
+            req_inst.columns = ['TYPE OF VEHICLE', 'Required Instruments']
+            
+            fig_req = go.Figure()
+            fig_req.add_trace(go.Bar(
+                x=req_inst['TYPE OF VEHICLE'],
+                y=req_inst['Required Instruments'],
+                marker_color=[TYPE_COLORS.get(t, '#888') for t in req_inst['TYPE OF VEHICLE']],
+                text=req_inst['Required Instruments'].astype(int),
+                textposition='outside',
+                textfont=dict(size=14, color=COLORS['text'])
+            ))
+            apply_chart_style(fig_req, height=350)
+            fig_req.update_layout(
+                title="Number of Standard Instruments Required",
+                xaxis_title="Vehicle Type",
+                yaxis_title="Total Instrument Count"
+            )
+            st.plotly_chart(fig_req, use_container_width=True)
     
     # ============================
     #  TAB 4: EQUIPMENT FAILURES
@@ -950,6 +987,7 @@ else:
                 ),
             }
         )
+        download_csv_button(f_df, "Equipment_Failures.csv", "dl_failures")
     
     # ============================
     #  TAB 5: FLEET COVERAGE
@@ -1006,6 +1044,7 @@ else:
                     if 'VEHICLE_TYPE' in repair_df.columns:
                         display_cols.append('VEHICLE_TYPE')
                     st.dataframe(repair_df[display_cols], use_container_width=True, hide_index=True)
+                    download_csv_button(repair_df[display_cols], "Under_CS_Repair.csv", "dl_repair")
                 
                 # HOTO Pending
                 hoto_df = fleet_analysis['hoto_pending']
@@ -1014,7 +1053,8 @@ else:
                     display_cols2 = ['VEHICLE_ID', 'DISTRICT']
                     if 'BASE LOCATION' in hoto_df.columns:
                         display_cols2.append('BASE LOCATION')
-                    st.dataframe(hoto_df[display_cols2].head(20), use_container_width=True, hide_index=True)
+                    st.dataframe(hoto_df[display_cols2], use_container_width=True, hide_index=True)
+                    download_csv_button(hoto_df[display_cols2], "HOTO_Pending.csv", "dl_hoto")
             
             # Missing vehicles
             if missing_ids:
@@ -1037,10 +1077,13 @@ else:
                         if 'BASE LOCATION' in missing_enriched.columns:
                             display_cols3.append('BASE LOCATION')
                         st.dataframe(missing_enriched[display_cols3], use_container_width=True, hide_index=True)
+                        download_csv_button(missing_enriched[display_cols3], "Missing_Reports_Enriched.csv", "dl_miss_e")
                     else:
                         st.dataframe(missing_display, use_container_width=True, hide_index=True)
+                        download_csv_button(missing_display, "Missing_Reports.csv", "dl_miss_b1")
                 else:
                     st.dataframe(missing_display, use_container_width=True, hide_index=True)
+                    download_csv_button(missing_display, "Missing_Reports.csv", "dl_miss_b2")
             else:
                 st.success("100% Reporting Compliance - All fleet vehicles have submitted status!")
         else:
