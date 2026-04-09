@@ -85,7 +85,10 @@ def get_instrument_cols(df):
                  'SUCTION', 'DEFIBRILLATOR', 'VENTILATOR', 'MONITOR'])]
 
 def process_ambulance_data(df):
-    """Main data processing pipeline for ambulance status."""
+    """Main data processing pipeline for ambulance status.
+    Returns: (processed_df, instrument_cols, duplicate_count)
+    """
+    initial_count = len(df)
     df = standardize_columns(df)
     instrument_cols = get_instrument_cols(df)
     
@@ -101,9 +104,15 @@ def process_ambulance_data(df):
     if 'TYPE OF VEHICLE' in df.columns:
         df['TYPE OF VEHICLE'] = df['TYPE OF VEHICLE'].apply(normalize_vehicle_type)
     
-    # Extract clean vehicle ID for matching
-    if 'VEHICLE DEITALS' in df.columns:
-        df['VEHICLE_ID'] = df['VEHICLE DEITALS'].apply(extract_vehicle_id)
+    # Identify Vehicle Detail column (handle typos like DEITALS vs DETAILS)
+    veh_detail_col = None
+    for col in df.columns:
+        if 'VEHICLE' in col.upper() and ('DETAIL' in col.upper() or 'DEITAL' in col.upper()):
+            veh_detail_col = col
+            break
+            
+    if veh_detail_col:
+        df['VEHICLE_ID'] = df[veh_detail_col].apply(extract_vehicle_id)
         
         # Deduplicate based on Timestamp if possible
         if 'Timestamp' in df.columns:
@@ -111,16 +120,24 @@ def process_ambulance_data(df):
                 import warnings
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
+                    # Remove GMT and other timezone strings that might confuse pandas
                     temp_time = df['Timestamp'].astype(str).str.replace('GMT', '', case=False)
+                    # Try flexible parsing
                     df['_Parsed_Time'] = pd.to_datetime(temp_time, errors='coerce')
                 
-                df = df.sort_values(by=['_Parsed_Time', 'Timestamp'], ascending=[True, True])
+                # Sort: Latest items at the bottom
+                df = df.sort_values(by=['_Parsed_Time', 'Timestamp'], ascending=True)
+                # Keep the last (latest) one
                 df = df.drop_duplicates(subset=['VEHICLE_ID'], keep='last')
                 df = df.drop(columns=['_Parsed_Time'])
             except Exception:
                 df = df.drop_duplicates(subset=['VEHICLE_ID'], keep='last')
         else:
             df = df.drop_duplicates(subset=['VEHICLE_ID'], keep='last')
+    elif 'VEHICLE_ID' not in df.columns:
+        # Fallback if no specific column found but we have other columns
+        # No deduplication possible without id
+        pass
     
     # Area mapping
     urban_list = ['RANCHI', 'DHANBAD', 'BOKARO', 'EAST SINGHBHUM']
@@ -145,7 +162,8 @@ def process_ambulance_data(df):
     
     df['Risk Level'] = df['Health %'].apply(classify_risk)
     
-    return df, instrument_cols
+    duplicate_count = initial_count - len(df)
+    return df, instrument_cols, duplicate_count
 
 def process_master_fleet(master_df):
     """Process the master fleet data from Check.xlsx MasterSheet format.

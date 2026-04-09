@@ -298,11 +298,11 @@ def load_and_cache_data(file_path):
     try:
         import os
         if not os.path.exists(file_path):
-            return None, []
+            return None, [], 0
         df = pd.read_csv(file_path, skiprows=1)
         return process_ambulance_data(df)
     except Exception:
-        return None, []
+        return None, [], 0
 
 
 # --- SIDEBAR ---
@@ -333,9 +333,13 @@ master_file = st.sidebar.file_uploader(
 # Load Data
 if status_file:
     raw_df = pd.read_csv(status_file, skiprows=1)
-    df, inst_cols = process_ambulance_data(raw_df)
+    df, inst_cols, dup_removed = process_ambulance_data(raw_df)
+    if dup_removed > 0:
+        st.sidebar.success(f"Deduplicated: {dup_removed} repeated entries removed. Keeping only the latest reports.")
 else:
-    df, inst_cols = load_and_cache_data("latest_status.csv")
+    df, inst_cols, dup_removed = load_and_cache_data("latest_status.csv")
+    if dup_removed > 0:
+        st.sidebar.info(f"Loaded {len(df)} unique vehicles ({dup_removed} duplicates skipped).")
 
 if df is None or df.empty:
     st.markdown("""
@@ -532,7 +536,7 @@ else:
     low_risk = len(df_filtered[df_filtered['Risk Level'] == 'Low Risk'])
     
     k1, k2, k3, k4, k5, k6 = st.columns(6)
-    k1.markdown(kpi_card("Reported Fleet", total, "Vehicles with status"), unsafe_allow_html=True)
+    k1.markdown(kpi_card("Unique Fleet", total, f"From {total + dup_removed} raw reports"), unsafe_allow_html=True)
     k2.markdown(kpi_card("Avg Health", f"{avg_health:.1f}%", "Fleet-wide average"), unsafe_allow_html=True)
     k3.markdown(kpi_card("High Risk", high_risk, "Health < 50%", "danger"), unsafe_allow_html=True)
     k4.markdown(kpi_card("Medium Risk", medium_risk, "Health 50-80%", "warning"), unsafe_allow_html=True)
