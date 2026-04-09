@@ -925,10 +925,31 @@ else:
             st.markdown("<div class='section-header'>Standard Minimum Requirements (100% Configuration)</div>", unsafe_allow_html=True)
             st.markdown(f"<div style='color:{COLORS['muted']}; font-size:0.9rem; margin-bottom:15px;'>Because a 100% score for ALS is different from BLS, here is the standard expected inventory for each vehicle type:</div>", unsafe_allow_html=True)
             
-            # Categorizing Instruments based on typical 108 Ambulance norms
-            bls_core = ['Auto Loader - Collapsible stretcher', 'Scoop Stretcher', 'Spine Board with Straps', 'D Type Oxygen Cylinder', 'B Type Oxygen Cylinder', 'Portable Oxygen Cylinder', 'Flowmeter', 'Humidifier Bottel', 'Aneroid B.P Appratus with Pediatric Cuff-Size', 'Pneumatic Splints', 'Guaze Cutter', 'Thermometer (Digital)', 'Wheel Chair', 'Needle cum Syringe Destroyer']
-            als_core = bls_core + ['Nebulizer Machine', 'Suction Machine (Electric)', 'Suction Machine (Hand Held)', 'Pulse Oximeter', 'Glucometer', 'Margils Forcep', 'Artificial Manual Breathing unit (Adult, Child+Neonatal)']
-            neo_core = bls_core + ['Stethoscope (Pediatric+Neonatal)', 'Cervical Collar- Paediatric', 'Double Head Immobilizer (Pediatric+Neonatal)', 'Artificial Manual Breathing unit (Adult, Child+Neonatal)', 'Nebulizer Machine', 'Suction Machine (Electric)', 'Suction Machine (Hand Held)', 'Pulse Oximeter']
+            # Categorizing Instruments based on provided specific mapping
+            bls_core = [
+                'Cervical Collar- Paediatric', 'D Type Oxygen Cylinder', 'Defibrillator Cum Monitor', 
+                'Double Head Immobilizer (Pediatric+Neonatal)', 'EMT Shears', 'Endotracheal Tube (Uncuffed)', 
+                'Flowmeter', 'Glucometer', 'Guaze Cutter', 'Humidifier Bottel', 'Kidney Tray', 
+                'Laryngoscope (Pediatric+Neonatal)', 'Margils Forcep', 
+                'Multipara Monitor with Neonatal & Paediatric modes and attachment', 'Nebulizer Machine', 
+                'Needle cum Syringe Destroyer', 'Pneumatic Splints', 'Portable Oxygen Cylinder', 
+                'Pulse Oximeter', 'Rescue Equipment', 'Rescue Shears', 'Scoop Stretcher', 'Search Light', 
+                'Spine Board with Straps', 'Stethoscope (Pediatric+Neonatal)', 'Suction Machine (Electric)', 
+                'Suction Machine (Hand Held)', 'Syringe Pump', 'Thermometer (Digital)', 'Toothed Forceps'
+            ]
+
+            als_core = bls_core + [
+                'Aneroid B.P Appratus with Pediatric Cuff-Size', 
+                'Artery Forceps', 
+                'Artificial Manual Breathing unit (Adult, Child+Neonatal)', 
+                'Auto Loader - Collapsible stretcher', 
+                'B Type Oxygen Cylinder'
+            ]
+            
+            neo_core = als_core + [
+                'Transport Ventilator (Portable) Having both Pediatric+Neonatal mode', 
+                'Wheel Chair'
+            ]
             
             req_data = pd.DataFrame({
                 "Equipment / Instrument Name": inst_cols,

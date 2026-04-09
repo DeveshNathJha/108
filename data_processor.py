@@ -104,10 +104,30 @@ def process_ambulance_data(df):
     # Extract clean vehicle ID for matching
     if 'VEHICLE DEITALS' in df.columns:
         df['VEHICLE_ID'] = df['VEHICLE DEITALS'].apply(extract_vehicle_id)
+        
+        # Deduplicate based on Timestamp if possible
+        if 'Timestamp' in df.columns:
+            try:
+                import warnings
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    temp_time = df['Timestamp'].astype(str).str.replace('GMT', '', case=False)
+                    df['_Parsed_Time'] = pd.to_datetime(temp_time, errors='coerce')
+                
+                df = df.sort_values(by=['_Parsed_Time', 'Timestamp'], ascending=[True, True])
+                df = df.drop_duplicates(subset=['VEHICLE_ID'], keep='last')
+                df = df.drop(columns=['_Parsed_Time'])
+            except Exception:
+                df = df.drop_duplicates(subset=['VEHICLE_ID'], keep='last')
+        else:
+            df = df.drop_duplicates(subset=['VEHICLE_ID'], keep='last')
     
     # Area mapping
     urban_list = ['RANCHI', 'DHANBAD', 'BOKARO', 'EAST SINGHBHUM']
-    df['Area Level'] = df['DISTRICT'].apply(lambda x: 'Urban' if str(x).upper() in urban_list else 'Rural')
+    if 'DISTRICT' in df.columns:
+        df['Area Level'] = df['DISTRICT'].apply(lambda x: 'Urban' if str(x).upper() in urban_list else 'Rural')
+    else:
+        df['Area Level'] = 'Unknown'
     
     # Health Metrics
     df['Working Count'] = (df[instrument_cols] == 'WORKING').sum(axis=1)
