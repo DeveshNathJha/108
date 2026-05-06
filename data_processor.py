@@ -1,5 +1,52 @@
 import pandas as pd
 import re
+import warnings
+
+def clean_emt_id(val):
+    """Standardize EMT ID to SFJHE#### format."""
+    if pd.isna(val):
+        return val
+    val = str(val).strip()
+    # Check for multiple IDs (e.g. contains / or ,)
+    if '/' in val or ',' in val:
+        return val.upper()
+        
+    # Extract digits
+    digits = re.findall(r'\d+', val)
+    if not digits:
+        return val # Kept name or 'No I card'
+        
+    num_str = digits[-1]
+    # If the number is long (like 210862), maybe it's not the 4-digit code?
+    if len(num_str) > 4:
+        # Check if it has SFJHE, else leave as is
+        if 'SFJHE' in val.upper():
+            return val.upper().replace(' ', '')
+        return val
+        
+    # Standardize < 10000 numbers
+    try:
+        num = int(num_str)
+        return f'SFJHE{num:04d}'
+    except ValueError:
+        return val
+
+def merge_google_form_vehicle_cols(df):
+    """Consolidate multiple VEHICLE NUMBER columns from Google Form (AS to BP) into one."""
+    vehicle_cols = [c for c in df.columns if 'VEHICLE NUMBER' in c.upper()]
+    if len(vehicle_cols) > 1:
+        def merge_vals(row):
+            vals = [str(x).strip() for x in row if pd.notna(x) and str(x).strip() != '']
+            return vals[0] if vals else None
+        
+        merged = df[vehicle_cols].apply(merge_vals, axis=1)
+        # Insert at the first occurrence of vehicle number
+        first_col = vehicle_cols[0]
+        col_idx = df.columns.get_loc(first_col)
+        df = df.drop(columns=vehicle_cols)
+        df.insert(col_idx, 'VEHICLE NUMBER', merged)
+    return df
+
 
 # --- District Name Normalization Map ---
 DISTRICT_NORMALIZE = {
@@ -96,6 +143,14 @@ def process_ambulance_data(df):
     for col in instrument_cols:
         df[col] = df[col].astype(str).str.strip().str.upper()
         
+    # Standardize EMT ID if present
+    emt_cols = [c for c in df.columns if 'EMT ID' in c.upper()]
+    if emt_cols:
+        df[emt_cols[0]] = df[emt_cols[0]].apply(clean_emt_id)
+
+    # Consolidate Vehicle Number columns (for Google Form data)
+    df = merge_google_form_vehicle_cols(df)
+
     # Normalize district names
     if 'DISTRICT' in df.columns:
         df['DISTRICT'] = df['DISTRICT'].apply(normalize_district)
@@ -104,20 +159,22 @@ def process_ambulance_data(df):
     if 'TYPE OF VEHICLE' in df.columns:
         df['TYPE OF VEHICLE'] = df['TYPE OF VEHICLE'].apply(normalize_vehicle_type)
     
-    # Identify Vehicle Detail column (handle typos like DEITALS vs DETAILS)
-    veh_detail_col = None
-    for col in df.columns:
-        if 'VEHICLE' in col.upper() and ('DETAIL' in col.upper() or 'DEITAL' in col.upper()):
-            veh_detail_col = col
-            break
+    # Identify Vehicle Detail column (handle typos like DEITALS vs DETAILS or Google Form style)
+    veh_id_col = None
+    if 'VEHICLE NUMBER' in df.columns:
+        veh_id_col = 'VEHICLE NUMBER'
+    else:
+        for col in df.columns:
+            if 'VEHICLE' in col.upper() and ('DETAIL' in col.upper() or 'DEITAL' in col.upper()):
+                veh_id_col = col
+                break
             
-    if veh_detail_col:
-        df['VEHICLE_ID'] = df[veh_detail_col].apply(extract_vehicle_id)
+    if veh_id_col:
+        df['VEHICLE_ID'] = df[veh_id_col].apply(extract_vehicle_id)
         
         # Deduplicate based on Timestamp if possible
         if 'Timestamp' in df.columns:
             try:
-                import warnings
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
                     # Remove GMT and other timezone strings that might confuse pandas
